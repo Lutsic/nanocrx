@@ -6,6 +6,20 @@ All notable changes to `nanocrx` are documented in this file.
 
 ### Added
 
+-
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+## [0.2.0] - 2026-10-19
+
+### Added
+
 - Functions for checking if file is `CRX` and if it uses `CRX2` or `CRX3`.
 - Support for CRX2.
 - Conversion:
