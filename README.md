@@ -5,14 +5,14 @@
 A fast, simple and powerful Rust library for working with Chrome extension packages.
 
 `nanocrx` provides utilities for constructing Chrome Web Store download
-URLs, parsing CRX3 package headers, and converting CRX3 files into ZIP
+URLs, parsing CRX package headers, and converting CRX files into ZIP
 archives.
 
 ## Using `nanocrx` in your project
 Add `nanocrx` to your `Cargo.toml`
-```
+``` 
 [dependencies]
-nanocrx = "0.1.0"
+nanocrx = "0.2.0"
 ```
 or run
 ```
@@ -21,10 +21,12 @@ cargo add nanocrx
 
 # Features
 
-- Build Chrome Web Store download URLs.
+- Build direct download URLs for extension CRX files.
+- Parse CRX headers and access package metadata.
+- Convert CRX files into ZIP archives.
+- Supports both CRX2 and CRX3 formats.
 - Validate extension IDs and product version parameters format.
-- Parse CRX3 headers and access package metadata.
-- Convert CRX3 files into ZIP archives.
+- Simple tools for working with extensions, like extracting ID or slug from a Web Store URL.
 
 # Examples
 

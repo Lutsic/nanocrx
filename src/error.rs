@@ -20,14 +20,14 @@ impl fmt::Display for CrxUrlError {
 
 impl std::error::Error for CrxUrlError {}
 
-/// Errors that can occur when reading or parsing a `CRX3` file.
+/// Errors that can occur when reading or parsing a `CRX` file.
 #[derive(Debug)]
-pub enum Crx3Error {
+pub enum CrxError {
     /// The file does not contain the expected CRX magic bytes.
     InvalidMagicBytes,
     /// The CRX header exceeds the maximum supported size.
     CrxHeaderTooLarge,
-    /// The file uses an unsupported CRX version.
+    /// The file uses an incorrect CRX version.
     InvalidCrxVersion,
     /// An input or output operation failed.
     Io(std::io::Error),
@@ -39,19 +39,19 @@ pub enum Crx3Error {
     InvalidCrxIdLength,
 }
 
-impl From<std::io::Error> for Crx3Error {
+impl From<std::io::Error> for CrxError {
     fn from(err: std::io::Error) -> Self {
         Self::Io(err)
     }
 }
 
-impl From<prost::DecodeError> for Crx3Error {
+impl From<prost::DecodeError> for CrxError {
     fn from(err: prost::DecodeError) -> Self {
         Self::Protobuf(err)
     }
 }
 
-impl fmt::Display for Crx3Error {
+impl fmt::Display for CrxError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidMagicBytes => write!(f, "Invalid Magic Bytes: Cr24 not found"),
@@ -65,4 +65,24 @@ impl fmt::Display for Crx3Error {
     }
 }
 
-impl std::error::Error for Crx3Error {}
+impl std::error::Error for CrxError {}
+
+/// Errors that can occur when converting.
+#[derive(Debug, PartialEq, Eq)]
+pub enum ConversionError {
+    /// Provided webstore URL is invalid.
+    BadWebstoreUrl,
+    /// Invalid extension ID.
+    InvalidExtensionId,
+}
+
+impl fmt::Display for ConversionError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::BadWebstoreUrl => write!(f, "Invalid webstore URL"),
+            Self::InvalidExtensionId => write!(f, "Invalid extension ID"),
+        }
+    }
+}
+
+impl std::error::Error for ConversionError {}

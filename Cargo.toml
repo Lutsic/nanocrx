@@ -8,6 +8,7 @@ license = "MIT"
 repository = "https://github.com/Lutsic/nanocrx"
 keywords = ["chrome", "extension", "crx", "crx3", "browser"]
 categories = ["parser-implementations", "web-programming"]
+exclude = [".gitignore"]
 
 [dependencies]
 prost = "0.14.4"

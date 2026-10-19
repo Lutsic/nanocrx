@@ -1,5 +1,6 @@
 use std::{fs::File, io::{Read}, path::Path};
-use crate::error::Crx3Error;
+use crate::error::CrxError;
+use crate::crx::validate_magic;
 use prost::Message;
 
 /// Represents a `CRX3` extension package.
@@ -16,11 +17,11 @@ use prost::Message;
 ///
 /// let crx = Crx3::open("extension.crx")?;
 /// println!("Header size: {}", crx.header_size());
-/// # Ok::<(), nanocrx::Crx3Error>(())
+/// # Ok::<(), nanocrx::CrxError>(())
 /// ```
 pub struct Crx3 {
     header_size: u32,
-    header: CrxHeader,
+    header: Crx3Header,
 }
 
 /// Contains metadata parsed from a `CRX3` package header.
@@ -30,7 +31,7 @@ pub struct Crx3 {
 ///
 /// The presence of signature data does not mean that the signature
 /// has been cryptographically verified.
-pub struct CrxHeader {
+pub struct Crx3Header {
     sha256_with_rsa: Vec<AsymmetricKeyProof>,
     sha256_with_ecdsa: Vec<AsymmetricKeyProof>,
     verified_contents: Option<Vec<u8>>,
@@ -92,9 +93,9 @@ impl Crx3 {
     ///
     /// let crx = Crx3::open("extension.crx")?;
     /// println!("Header size: {}", crx.header_size());
-    /// # Ok::<(), nanocrx::Crx3Error>(())
+    /// # Ok::<(), nanocrx::CrxError>(())
     /// ```
-    pub fn open(path: impl AsRef<Path>) -> Result<Self, Crx3Error> {
+    pub fn open(path: impl AsRef<Path>) -> Result<Self, CrxError> {
         let mut file = File::open(path)?;
 
         let mut magic = [0u8; 4];
@@ -105,20 +106,20 @@ impl Crx3 {
         file.read_exact(&mut version_bytes)?;
         let version = u32::from_le_bytes(version_bytes);
         if version != 3 {
-            return Err(Crx3Error::InvalidCrxVersion);
+            return Err(CrxError::InvalidCrxVersion);
         }
 
         let mut size_bytes = [0u8; 4];
         file.read_exact(&mut size_bytes)?;
-        let header_size = u32::from_le_bytes(size_bytes) as usize;
+        let header_size = 12 + u32::from_le_bytes(size_bytes) as usize;
         const MAX_HEADER_SIZE: usize = 16 * 1024 * 1024;
         if header_size > MAX_HEADER_SIZE {
-            return Err(Crx3Error::CrxHeaderTooLarge);
+            return Err(CrxError::CrxHeaderTooLarge);
         }
 
         let file_len = file.metadata()?.len();
         if 12u64 + header_size as u64 > file_len {
-            return Err(Crx3Error::CrxHeaderTruncated);
+            return Err(CrxError::CrxHeaderTruncated);
         }
 
         let mut data = vec![0u8; header_size];
@@ -134,8 +135,6 @@ impl Crx3 {
 
     /// Returns the size of the `CRX3` header in bytes.
     ///
-    /// This size excludes the fixed 12-byte CRX file header.
-    ///
     /// # Examples
     ///
     /// ```no_run
@@ -143,7 +142,7 @@ impl Crx3 {
     ///
     /// let crx = Crx3::open("extension.crx")?;
     /// println!("Header size: {}", crx.header_size());
-    /// # Ok::<(), nanocrx::Crx3Error>(())
+    /// # Ok::<(), nanocrx::CrxError>(())
     /// ```
     pub fn header_size (&self) -> u32 {
         self.header_size
@@ -159,14 +158,14 @@ impl Crx3 {
     /// let crx = Crx3::open("extension.crx")?;
     /// let header = crx.header();
     /// println!("RSA proofs: {}", header.sha256_with_rsa().len());
-    /// # Ok::<(), nanocrx::Crx3Error>(())
+    /// # Ok::<(), nanocrx::CrxError>(())
     /// ```
-    pub fn header(&self) -> &CrxHeader {
+    pub fn header(&self) -> &Crx3Header {
         &self.header
     }
 }
 
-impl CrxHeader {
+impl Crx3Header {
     /// Returns the `RSA` signature proofs included in the `CRX3` header.
     ///
     /// Each proof contains a public key and its associated signature.
@@ -222,31 +221,7 @@ impl AsymmetricKeyProof {
     }
 }
 
-/// Validates the magic bytes inside `CRX` header.
-///
-/// A valid magic bytes must be equal to `Cr24`
-///
-/// # Errors
-///
-/// Returns an error if the magic bytes are not `Cr24`.
-///
-/// # Examples
-///
-/// ```
-/// use nanocrx::validate_magic;
-///
-/// assert!(validate_magic(&[0x43, 0x72, 0x32, 0x34]).is_ok());
-/// assert!(validate_magic(b"Cr24").is_ok());
-/// assert!(validate_magic(&[0x00, 0x00, 0x00, 0x00]).is_err());
-/// ```
-pub fn validate_magic (magic: &[u8; 4]) -> Result<(), Crx3Error> {
-    if magic != b"Cr24" {
-        return Err(Crx3Error::InvalidMagicBytes);
-    }
-    Ok(())
-}
-
-fn parse_header(data: &[u8]) -> Result<CrxHeader, Crx3Error> {
+fn parse_header(data: &[u8]) -> Result<Crx3Header, CrxError> {
     let proto = ProtoCrxFileHeader::decode(data)?;
 
     let crx_id = match proto.signed_header_data.as_deref() {
@@ -257,7 +232,7 @@ fn parse_header(data: &[u8]) -> Result<CrxHeader, Crx3Error> {
                 Some(id) => {
                     let id: [u8; 16] = id
                         .try_into()
-                        .map_err(|_| Crx3Error::InvalidCrxIdLength)?;
+                        .map_err(|_| CrxError::InvalidCrxIdLength)?;
 
                     Some(id)
                 }
@@ -285,7 +260,7 @@ fn parse_header(data: &[u8]) -> Result<CrxHeader, Crx3Error> {
         })
         .collect();
 
-    Ok(CrxHeader {
+    Ok(Crx3Header {
         sha256_with_rsa,
         sha256_with_ecdsa,
         verified_contents: proto.verified_contents,
