@@ -39,7 +39,7 @@ let url = CrxUrl::new("iginnfkhmmfhlkagcmpgofnjhanpmklb")?
     .to_url();
 ```
 
-Convert a downloaded CRX3 file into a ZIP archive:
+Convert a downloaded CRX3 or CRX2 file into a ZIP archive:
 ```
 use nanocrx::crx_to_zip;
 
