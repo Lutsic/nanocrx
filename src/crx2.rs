@@ -1,5 +1,5 @@
 use std::{fs::File, io::{Read}, path::Path};
-use crate::error::CrxError;
+use crate::{CrxError, Crx2Header, Manifest, parse_manifest};
 
 /// Represents a `CRX2` extension package.
 ///
@@ -20,20 +20,7 @@ use crate::error::CrxError;
 pub struct Crx2 {
     header_size: u32,
     header: Crx2Header,
-}
-
-/// Contains metadata parsed from a `CRX2` package header.
-///
-/// Provides access to the package's signature proofs, verified contents
-/// metadata, signed header data, and extension ID when available.
-///
-/// The presence of signature data does not mean that the signature
-/// has been cryptographically verified.
-pub struct Crx2Header {
-    public_key_size: u32,
-    signature_size: u32,
-    signature: Vec<u8>,
-    public_key: Vec<u8>,
+    manifest: Manifest,
 }
 
 impl Crx2 {
@@ -73,6 +60,10 @@ impl Crx2 {
             return Err(CrxError::CrxHeaderTooLarge);
         }
 
+        if header_size > file.metadata()?.len() as u32 || header_size == 0 {
+            return Err(CrxError::CrxHeaderTruncated);
+        }
+
         let mut signature = vec![0u8; signature_size as usize];
         file.read_exact(&mut signature)?;
 
@@ -86,7 +77,12 @@ impl Crx2 {
             public_key,
         };
 
-        Ok(Self { header_size, header })
+        let mut zip_data = Vec::new();
+        file.read_to_end(&mut zip_data)?;
+
+        let manifest = parse_manifest(zip_data)?;
+
+        Ok(Self { header_size, header, manifest })
     }
 
     /// Returns the size of the `CRX2` header in bytes.
@@ -119,26 +115,20 @@ impl Crx2 {
     pub fn header(&self) -> &Crx2Header {
         &self.header
     }
-}
 
-impl Crx2Header {
-    /// Returns the size of the public key in bytes.
-    pub fn public_key_size(&self) -> u32 {
-        self.public_key_size
-    }
-
-    /// Returns the size of the signature in bytes.
-    pub fn signature_size(&self) -> u32 {
-        self.signature_size
-    }
-
-    /// Returns a reference to the signature bytes.
-    pub fn signature(&self) -> &[u8] {
-        &self.signature
-    }
-
-    /// Returns a reference to the public key bytes.
-    pub fn public_key(&self) -> &[u8] {
-        &self.public_key
+    /// Returns a reference to the parsed manifest data.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use nanocrx::Crx2;
+    ///
+    /// let crx = Crx2::open("extension.crx")?;
+    /// let manifest = crx.manifest();
+    /// println!("Extension name: {}", manifest.name);
+    /// # Ok::<(), nanocrx::CrxError>(())
+    /// ```
+    pub fn manifest(&self) -> &Manifest {
+        &self.manifest
     }
 }

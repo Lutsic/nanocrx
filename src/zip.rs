@@ -4,11 +4,11 @@ use std::{
     path::Path,
 };
 
-use crate::error::CrxError;
-use crate::validate_magic;
+use crate::CrxError;
 
-/// Converts `CRX` file into `ZIP` archive. 
+/// Converts `CRX` file into `ZIP` archive.
 ///
+/// In the most cases, `ZIP` will contain the source code of the extension. 
 /// If output zip already exists, it will be overwrited.
 ///
 /// # Errors
@@ -32,7 +32,9 @@ pub fn crx_to_zip(
 
     let mut magic = [0u8; 4];
     file.read_exact(&mut magic)?;
-    validate_magic(&magic)?;
+    if &magic[0..4] != b"Cr24" {
+        return Err(CrxError::InvalidMagicBytes);
+    }
 
     let mut version_bytes = [0u8; 4];
     file.read_exact(&mut version_bytes)?;

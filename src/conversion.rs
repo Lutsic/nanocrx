@@ -1,4 +1,4 @@
-use crate::error::ConversionError;
+use crate::ConversionError;
 
 /// Extracts the extension ID from a Chrome Web Store URL.
 ///
@@ -11,9 +11,8 @@ use crate::error::ConversionError;
 /// ```
 /// use nanocrx::id_from_webstore_url;
 ///
-/// assert!(id_from_webstore_url("https://chromewebstore.google.com/detail/boxel-rebound/iginnfkhmmfhlkagcmpgofnjhanpmklb?utm_source=chatgpt.com").is_ok());
-/// assert!(id_from_webstore_url("chromewebstore.google.com/detail/boxel-rebound/iginnfkhmmfhlkagcmpgofnjhanpmklb").is_ok());
-/// assert!(id_from_webstore_url("https://chromewebstore.google.com/detail/cool-extension/invalid-id").is_err());
+/// id_from_webstore_url("https://chromewebstore.google.com/detail/boxel-rebound/iginnfkhmmfhlkagcmpgofnjhanpmklb?utm_source=chatgpt.com").unwrap();
+/// id_from_webstore_url("chromewebstore.google.com/detail/boxel-rebound/iginnfkhmmfhlkagcmpgofnjhanpmklb").unwrap();
 /// ```
 pub fn id_from_webstore_url(url: &str) -> Result<&str, ConversionError> {
     let url = url.split('?').next().unwrap_or("");
@@ -73,8 +72,7 @@ pub fn slug_from_webstore_url(url: &str) -> Result<&str, ConversionError> {
 /// ```
 /// use nanocrx::webstore_url_from_id_and_slug;
 ///
-/// assert!(webstore_url_from_id_and_slug("iginnfkhmmfhlkagcmpgofnjhanpmklb", "boxel-rebound").is_ok());
-/// assert!(webstore_url_from_id_and_slug("invalid-id", "cool_extension").is_err());
+/// webstore_url_from_id_and_slug("iginnfkhmmfhlkagcmpgofnjhanpmklb", "boxel-rebound").unwrap();
 /// ```
 pub fn webstore_url_from_id_and_slug(id: &str, slug: &str) -> Result<String, ConversionError> {
     if id.len() != 32 || !id.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit()) {
@@ -85,4 +83,35 @@ pub fn webstore_url_from_id_and_slug(id: &str, slug: &str) -> Result<String, Con
         "https://chromewebstore.google.com/detail/{}/{}",
         slug, id
     ))
+}
+
+/// Makes an extension ID from a `CRX ID`.
+///
+/// # Errors
+///
+/// Returns an error if the CRX ID is invalid.
+///
+/// # Examples
+///
+/// ```
+/// use nanocrx::extension_id_from_crx_id;
+///
+/// extension_id_from_crx_id(&[0; 16]).unwrap();
+/// ```
+pub fn extension_id_from_crx_id(crx_id: &[u8]) -> Result<String, ConversionError> {
+    if crx_id.len() != 16 {
+        return Err(ConversionError::InvalidCrxId);
+    }
+
+    let mut result = String::with_capacity(32);
+
+    for &byte in crx_id {
+        let high = byte >> 4;
+        let low = byte & 0x0F;
+
+        result.push((b'a' + high) as char);
+        result.push((b'a' + low) as char);
+    }
+
+    Ok(result)
 }

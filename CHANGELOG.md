@@ -2,19 +2,20 @@
 
 All notable changes to `nanocrx` are documented in this file.
 
-## [Unreleased]
+## [0.3.0] - 2026-11-01
 
 ### Added
 
--
+- Added tests.
+- Added extension_id_from_crx_id conversion.
+- Added .extension_id method for Crx3Header.
+- Added Manifest support.
 
 ### Changed
 
--
-
-### Fixed
-
--
+- General refactoring.
+- Validation functions now return bool instead of errors.
+- Improved docs.
 
 ## [0.2.0] - 2026-10-19
 

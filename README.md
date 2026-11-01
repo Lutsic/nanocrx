@@ -12,7 +12,7 @@ archives.
 Add `nanocrx` to your `Cargo.toml`
 ``` 
 [dependencies]
-nanocrx = "0.2.0"
+nanocrx = "0.3.0"
 ```
 or run
 ```
@@ -23,6 +23,7 @@ cargo add nanocrx
 
 - Build direct download URLs for extension CRX files.
 - Parse CRX headers and access package metadata.
+- Access package manifest data.
 - Convert CRX files into ZIP archives.
 - Supports both CRX2 and CRX3 formats.
 - Validate extension IDs and product version parameters format.
