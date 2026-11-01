@@ -37,7 +37,16 @@ use nanocrx::CrxUrl;
 
 let url = CrxUrl::new("iginnfkhmmfhlkagcmpgofnjhanpmklb")?
     .prodversion("155.0.0.0")?
+    .allow_crx2(false)
     .to_url();
+```
+
+Get extension name from a CRX3 file:
+```
+use nanocrx::Crx3;
+
+let crx = Crx3::open("extension.crx")?;
+println!("Extension name: {}", crx.manifest().name);
 ```
 
 Convert a downloaded CRX3 or CRX2 file into a ZIP archive:
